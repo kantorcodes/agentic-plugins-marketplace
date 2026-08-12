@@ -5,7 +5,9 @@ description: >
   provisioning and cp-vp-aks-deploy registration are complete. Idempotent — safe to
   invoke again if the jobs already exist. Use when a service-cp-* repo is missing the
   deploy-dev and deploy-sit jobs in its ci-build-publish.yml, or when setting up a
-  newly bootstrapped service for the first time.
+  newly bootstrapped service for the first time. Also detects a dedicated Postgres
+  database and chains to exclude-db-from-priming-clear to protect it from the nonprod
+  priming pipeline's quick_clear sweep.
 ---
 
 # Skill: Wire Service Deployment
@@ -363,6 +365,25 @@ EOF
 
 ---
 
+## Step 11 — Protect any dedicated database from priming quick-clear
+
+Check whether this service owns a dedicated database — a `POSTGRES_DB` entry in
+`docker-compose.yml` or a `spring.datasource.url` in
+`src/main/resources/application.yaml` is enough to tell:
+
+```bash
+{ grep -q "POSTGRES_DB" docker-compose.yml 2>/dev/null || grep -q "datasource" src/main/resources/application.yaml 2>/dev/null; } \
+  && echo "HAS_DB" || echo "NO_DB_OWNED"
+```
+
+If `NO_DB_OWNED`, this service is a stateless proxy — nothing further to do.
+
+If `HAS_DB`, invoke the `exclude-db-from-priming-clear` skill now — it runs its
+own detection (Step 1) and human-confirmation (Step 2), so do not duplicate
+that logic here.
+
+---
+
 ## Rules
 
 - **Never run this skill on `main` directly.** Always create and push from a new branch.
@@ -373,3 +394,6 @@ EOF
   updates only the `template_parameters` blocks in the deploy jobs).
 - If `gh api` cannot read `cp-vp-aks-deploy` (permissions issue), ask the user to provide
   cluster params manually rather than blocking the entire workflow.
+- **Step 11's database chain is best-effort, not a gate.** If database detection or the
+  chained `exclude-db-from-priming-clear` run fails, report it but do not block or roll
+  back the CI-wiring PR already raised in Steps 6–10 — they are independent concerns.
