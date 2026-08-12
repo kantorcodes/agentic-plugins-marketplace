@@ -103,6 +103,19 @@ chore/PROJ-NNN-short-description
 
 No direct commits to `main` or `master` — all changes via PR with ≥1 human approval.
 
+**Checking whether this is technically enforced requires two separate GitHub APIs, not one.**
+`gh api repos/hmcts/<repo>/branches/<default>/protection` only sees GitHub's older classic
+branch-protection rules — it returns "Branch not protected" (404) even on a repo that is fully
+protected via GitHub's newer **Rulesets** feature. An early check here (2026-07-24) used only
+that endpoint, concluded most of the fleet was unprotected, and was wrong: every repo re-checked
+via `gh api repos/hmcts/<repo>/rulesets` turned out to have an active ruleset requiring at least
+one approval. Always check rulesets, not just classic protection, before concluding a repo lacks
+enforcement — and if in doubt, the PR merge attempt itself is the authoritative check: `gh pr
+merge` fails with "the base branch policy prohibits the merge" on a genuinely protected repo.
+Don't assume a green `mergeable`/`CLEAN` PR state implies the approval rule was satisfied either
+way — check `reviewDecision`/`reviews` on the PR itself, and never merge (or instruct a merge)
+without a real human approval recorded regardless of what GitHub's own gate does or doesn't do.
+
 ---
 
 ### Pull request hygiene
