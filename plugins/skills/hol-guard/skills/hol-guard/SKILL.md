@@ -18,19 +18,19 @@ HOL Guard is a local security layer for AI agents, tools, MCP servers, plugins, 
 
 ## Install check
 
-Check whether the CLI is available:
+Probe the actual CLI instead of relying on shell-specific executable lookup commands:
 
 ```bash
-command -v hol-guard
+hol-guard --version
 ```
 
-If it is missing and the user asked for runtime setup, prefer an isolated CLI install:
+If the CLI is unavailable and the user asked for runtime setup, prefer an isolated CLI install:
 
 ```bash
 pipx install hol-guard
 ```
 
-Then verify the runtime:
+Then verify the runtime and detect the exact supported local harness identifier:
 
 ```bash
 hol-guard status
@@ -39,25 +39,30 @@ hol-guard detect --json
 
 ## Protect a local harness
 
-For supported harnesses, use Guard's own install and run flow:
+Use the exact harness identifier returned by `hol-guard detect --json`. Do not maintain or guess a separate supported-harness list in this skill.
+
+For a detected supported harness, use Guard's own install and run flow:
 
 ```bash
 hol-guard bootstrap
 hol-guard install <harness>
 hol-guard run <harness> --dry-run
+hol-guard doctor <harness> --json
 hol-guard run <harness>
 hol-guard status
 ```
 
-Supported harness names include `claude-code`, `codex`, `copilot`, `cursor`, `gemini`, `hermes`, `openclaw`, `opencode`, and `antigravity`.
+A missing detection result, Guard error, failed dry-run, or failed doctor check is not permission to launch an unprotected fallback agent.
 
 ### Claude Code
+
+When `hol-guard detect --json` identifies Claude Code, use its exact Guard harness identifier:
 
 ```bash
 hol-guard install claude-code
 hol-guard run claude-code --dry-run
-hol-guard run claude-code
 hol-guard doctor claude-code --json
+hol-guard run claude-code
 ```
 
 Prefer these Guard-owned Claude hooks and checks over manual configuration changes.
