@@ -71,7 +71,7 @@ Prefer these Guard-owned Claude hooks and checks over manual configuration chang
 
 ```bash
 hol-guard approvals
-hol-guard approvals open
+hol-guard approvals open <request-id>
 hol-guard receipts
 hol-guard diff <harness>
 ```
